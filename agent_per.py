@@ -55,11 +55,12 @@ class Agent():
 
         print(samples['action'])
 
-        states = T.tensor(samples['obs']).to(self.q_eval.device)
-        rewards = T.tensor(samples['reward']).to(self.q_eval.device)
-        dones = T.tensor(samples['done']).to(self.q_eval.device)
-        actions = T.tensor(samples['action']).to(self.q_eval.device)
-        states_ = T.tensor(samples['next_obs']).to(self.q_eval.device)
+        states = T.tensor(samples['obs'], device=self.q_eval.device)
+        rewards = T.tensor(samples['reward'], device=self.q_eval.device)
+        dones = T.tensor(samples['done'], device=self.q_eval.device, dtype=T.bool)
+        actions = T.tensor(samples['action'], device=self.q_eval.device, dtype=T.int64)
+        states_ = T.tensor(samples['next_obs'], device=self.q_eval.device)
+
         return states, actions, rewards, states_, dones, samples['indexes'], samples['weights']
 
 
@@ -240,16 +241,28 @@ class DDQNAgent(Agent):
         q_next = self.q_next.forward(states_)
         q_eval = self.q_eval.forward(states_)
 
-        for i in range(actions.size(dim=0)):
-            system = states[i][-4:]
-            valid_actions = env.get_valid_actions(system)
-            action_mask = np.zeros(len(env.action_space), dtype=int)
-            action_mask[valid_actions] = 1
-            action_mask_tensor = T.tensor(action_mask, device=actions.device).unsqueeze(0)
+        # for i in range(actions.size(dim=0)):
+        #     system = states[i][-4:]
+        #     valid_actions = env.get_valid_actions(system)
+        #     action_mask = np.zeros(len(env.action_space), dtype=int)
+        #     action_mask[valid_actions] = 1
+        #     action_mask_tensor = T.tensor(action_mask, device=actions.device).unsqueeze(0)
+        #
+        #     masked_q_values = q_eval[i] * action_mask_tensor
+        #     masked_q_values[action_mask_tensor == 0] = float('-inf')
+        #     q_eval[i] = masked_q_values
 
-            masked_q_values = q_eval[i] * action_mask_tensor
-            masked_q_values[action_mask_tensor == 0] = float('-inf')
-            q_eval[i] = masked_q_values
+        # Vectorized action masking
+        systems = states_[:, -4:]  # Assuming the last 4 elements represent the system state
+        action_mask_tensor = T.zeros(q_eval.size(), device=actions.device)
+
+        for i in range(self.batch_size):
+            system = systems[i]
+            valid_actions = env.get_valid_actions(system)
+            action_mask_tensor[i, valid_actions] = 1
+
+        masked_q_values = q_eval * action_mask_tensor
+        masked_q_values[action_mask_tensor == 0] = float('-inf')
 
         max_actions = T.argmax(q_eval, dim=1)
         q_next[dones] = 0.0

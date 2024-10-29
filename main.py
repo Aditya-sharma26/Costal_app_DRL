@@ -12,6 +12,14 @@ from values_surge import surge
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Deep Q Learning: From Paper to Code')
+
+    # Define environment-specific parameters
+    parser.add_argument('-b1', type=float, default=1.5, help='Base height for Region 1 lower dike')
+    # Dike in region 2 are placed adjacent to dike in region 1 with their top height matching to prevent lateral flow
+    parser.add_argument('-b2', type=float, default=3.75, help='Base height for Region 1 higher dike')
+    # Base elevation of region 2 is hard coded to be 0.75 m higher than region 1
+    parser.add_argument('-r_1_h0', type=float, default=0.0, help='Base elevation for Region 1')
+
     # the hyphen makes the argument optional
     parser.add_argument('-n_games', type=int, default=30000,
                         help='Number of games to play')
@@ -33,12 +41,6 @@ if __name__ == '__main__':
                         help='Batch size for replay memory sampling')
     parser.add_argument('-replace', type=int, default=20,
                         help='interval for replacing target network')
-    # parser.add_argument('-env', type=str, default='PongNoFrameskip-v4',
-    #                         help='Atari environment.\nPongNoFrameskip-v4\n \
-    #                               BreakoutNoFrameskip-v4\n \
-    #                               SpaceInvadersNoFrameskip-v4\n \
-    #                               EnduroNoFrameskip-v4\n \
-    #                               AtlantisNoFrameskip-v4')
     parser.add_argument('-gpu', type=str, default='0', help='GPU: 0 or 1')
     parser.add_argument('-load_checkpoint', type=bool, default=False,
                         help='load model checkpoint')
@@ -54,7 +56,7 @@ if __name__ == '__main__':
     #                     help='Set first action of episode to fire')
     parser.add_argument('-climate_ssp', type=str, default='245',
                         help='119/245/585')
-    parser.add_argument('-env', type=str, default='2_regions_4_dikes',
+    parser.add_argument('-env', type=str, default='environment_2_regions_4_dikes_elevated',
                         help='Name of the file defining the environment')
     args = parser.parse_args()
 
@@ -62,20 +64,26 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+    # Initialize environment-specific variables
+    env_variant = f"Env_b1_{args.b1}_b2_{args.b2}_r1h0_{args.r_1_h0}"
+    results_folder = f"results/{env_variant}"
+    os.makedirs(results_folder, exist_ok=True)
+
     wandb.init(
         # set the wandb project where this run will be logged
-        project="coastal_city_DDQN_PER_without_terminal",
-        name=f"{args.env}",
+        project="coastal_city_DDQN",
+        name=env_variant,
         # track hyperparameters and run metadata
         config={
-            "environment": args.env,
+            "environment": env_variant,
             "learning_rate": 0.0001,
             "main_net_update": 1,
             "target_net_update": 20,
             "max_episodes": 20000,
         }
     )
-    env = make_env(env_name=args.env, climate_model=args.climate_ssp)
+    # env = make_env(env_name=args.env, climate_model=args.climate_ssp)
+    env = make_env(env_name=args.env, climate_model=args.climate_ssp, b1=args.b1, b2=args.b2, r_1_h0=args.r_1_h0)
 
     best_score = -np.inf
     agent_ = getattr(Agents, args.algo)
@@ -91,22 +99,28 @@ if __name__ == '__main__':
                    eps_dec=args.eps_dec,
                    chkpt_dir=args.path,
                    algo=args.algo,
-                   env_name=args.env)
+                   env_name=env_variant)
 
     if args.load_checkpoint:
         # print(args.load_checkpoint)
         agent.load_models()
 
     # Create a log file name using environment and save it to the path defined in args.path
-    log_file_path = os.path.join(args.path, f"{args.env}_evaluation_policy_log.txt")
-
-    # Open the log file for writing
+    log_file_path = os.path.join(results_folder, f"evaluation_policy_log.txt")
     log_file = open(log_file_path, "w")
+    figure_file = os.path.join(results_folder, f"plot.png")
+    scores_file = os.path.join(results_folder, f"scores.npy")
 
-    fname = args.algo + '_' + args.env + '_alpha' + str(args.lr) + '_' \
-            + str(args.n_games) + 'games'
-    figure_file = 'plots/' + fname + '.png'
-    scores_file = fname + '_scores.npy'
+    # log_file_path = os.path.join(args.path, f"{args.env}_evaluation_policy_log.txt")
+    #
+    # # Open the log file for writing
+    # log_file = open(log_file_path, "w")
+    #
+    # fname = args.algo + '_' + args.env + '_alpha' + str(args.lr) + '_' \
+    #         + str(args.n_games) + 'games'
+    # figure_file = 'plots/' + fname + '.png'
+    # scores_file = fname + '_scores.npy'
+
     main_net_update_feq = 1
     # main_net_update_feq = 1
     main_net_updates = 0
@@ -178,10 +192,10 @@ if __name__ == '__main__':
                     new_observation, reward, done, info = env.step(action)
                     eval_rewards += reward
                     if i%1000==0:
-                        if year <= 10:  # Log only up to year 10
+                        if year <= 20:  # Log only up to year 10
                             log_file.write(
                                 f'Episode: {i} year: {year}, action: {action}, Next state: {env.next_system}\n')
-
+                            log_file.flush()
                     observation = new_observation
                     if done:
                         print('epi {} ends with total rewards {}'.format(eval_epi, eval_rewards))

@@ -7,12 +7,15 @@ from values_slr import slr
 from values_surge import surge
 
 class Environment(Env):
-    def __init__(self, env_name, climate_model):
+    def __init__(self, env_name, climate_model, b1, b2, r_1_h0):
 
         # Initialize environment name and climate model
         self.env_name = env_name
         self.climate_model = climate_model
-
+        self.b1 = b1
+        self.b2 = b2
+        self.r_1_h0 = r_1_h0
+        
         # Define initial year and horizon
         self.year = 0
         self.horizon = 39
@@ -309,26 +312,26 @@ class Environment(Env):
         discounted_sum_scc = np.array(discounted_sum_scc_['discounted_sum_scc'])    # Discounted sum from a given year to end of planning horizon
 
         # Base height, mid height and top heights of dikes D1
-        # Keep b1 atleast 0.75 to ensure the corresponding dikes in region 2 can be placed alongside
-        b1 = 1.5          # base of dike D1 (meters)
-        m1 = 2.25       # Mid height of dike D1 if constructed to 0.75 meters
-        t1 = 3        # top of dike D1 (meters)
+        # Keep b1_ atleast 0.75 to ensure the corresponding dikes in region 2 can be placed alongside
+        # b1 = 1.5          # base of dike D1 (meters)
+        m1 = self.b1 + 0.75       # Mid height of dike D1 if constructed to 0.75 meters
+        t1 = m1 + 0.75        # top of dike D1 (meters)
 
         # Base height, mid height and top heights of dikes D2
-        b2 = 3          # base of dike D2 (meters)
-        m2 = 3.75       # Mid height of dike D2 if constructed to 0.75 meters
-        t2 = 4.5        # top of dike D2 (meters)
+        # b2 = 3.75          # base of dike D2 (meters)
+        m2 = self.b2 + 0.75       # Mid height of dike D2 if constructed to 0.75 meters
+        t2 = m2 +0.75        # top of dike D2 (meters)
 
         # Elevation of region 1 and 2 at shore line
-        r_1_h0 = 1.25
-        r_2_h0 = 2
+        # r_1_h0 = 0
+        r_2_h0 = self.r_1_h0 + 0.75
 
         print(f"The total height is: {total_height}")
         print(f"Next system: {next_system}")
         # flood cost
         if next_system == (0, 0, 0, 0): # System 1
 
-            area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
             area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
 
             vol_f = area_r_1+ area_r_2
@@ -339,7 +342,7 @@ class Environment(Env):
 
         elif next_system == (0, 0, 0, 0.75):    # System 2
 
-            area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
             area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0     # Even though D4 present, when water level between base and top of D4 (Zone 4b), lateral flow will occur from Region 1 to Region 2
 
             vol_f = area_r_1 + area_r_2
@@ -350,7 +353,7 @@ class Environment(Env):
 
         elif next_system == (0, 0, 0.75, 0): # System 3
 
-            area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
             area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0 # Even though D3 present, when water level between base and top of D3 (Zone 2b), lateral flow will occur from Region 1 to Region 2
 
             vol_f = area_r_1 + area_r_2
@@ -363,7 +366,7 @@ class Environment(Env):
         elif next_system == (0, 0, 0.75, 0.75): # System 4
 
             # Following same arguments as above, Dike D3 and D4 will be ineffective i.e.flooded volume same as do-nothing
-            area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
             area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
             vol_f = area_r_1 + area_r_2
 
@@ -373,14 +376,14 @@ class Environment(Env):
 
         elif next_system == (0, 0.75, 0, 0):    # System 5
 
-            if total_height <= b2:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b2:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b2 < total_height <= m2):  # Zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2):  # Zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else: # Dike D2 becomes ineffective
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -394,14 +397,14 @@ class Environment(Env):
             # D4 without D2 upto 1.5 meter is ineffective. The system will behave same as the above system.
             # That is D2 will be effective until 0.75 m but everything will be flooded once D2 is overtopped
 
-            if total_height <= b2:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b2:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b2 < total_height <= m2):  # Zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2):  # Zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else: # Dike D2 becomes ineffective
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -415,14 +418,14 @@ class Environment(Env):
 
             # D3 without D1 upto 1.5 meter is ineffective. The system will behave same as the system (0, 0.75, 0, 0).
 
-            if total_height <= b2:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b2:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b2 < total_height <= m2):  # Zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2):  # Zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else: # Dike D2 becomes ineffective
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -436,14 +439,14 @@ class Environment(Env):
 
         # Following same arguments as above, Dike D3 and D4 will be ineffective. Same as system (0, 0.75, 0, 0).
 
-            if total_height <= b2:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b2:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b2 < total_height <= m2):  # Zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2):  # Zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else: # Dike D2 becomes ineffective
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -457,14 +460,14 @@ class Environment(Env):
             # D2 will effectively protect zone 4a. As soon as water in zone 4b, everything flooded.
             # Again, same as system (0, 0.75, 0, 0)
 
-            if total_height <= b2:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b2:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b2 < total_height <= m2):  # Zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2):  # Zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else: # Dike D2 becomes ineffective
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -478,18 +481,18 @@ class Environment(Env):
 
             # D2 will protect zone 4a as well as 4b since top of D2 and D4 match, there will be no lateral flow.
             # D4 will be effective as well and protect zone 4
-            if total_height <= b2:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b2:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b2 < total_height <= m2): # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2): # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2   # Region 2 completely submerged upto zone 3
             elif (m2 < total_height <= t2):  # Zone 4b. Coincides with zone 4 of region 2
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 # Base of D4 = m2
                 area_r_2 = 0.5 * (m2 - r_2_h0) * (m2 - r_2_h0) * (1 / s) + 0.5 * (total_height - m2) * (m2 - r_2_h0) * (1 / s)  # D4 will resist
             else: # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -505,14 +508,14 @@ class Environment(Env):
             # D2 effective upto 0.75 meter since D4=0
             # Hence, same as system (0, 0.75, 0, 0)
 
-            if total_height <= b2:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b2:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b2 < total_height <= m2):  # Zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2):  # Zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else: # Dike D2 becomes ineffective
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
 
@@ -527,18 +530,18 @@ class Environment(Env):
 
             # D3 ineffective since D1=0
             # Same as System 10 (0, 1.5, 0, 0.75)
-            if total_height <= b2:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b2:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b2 < total_height <= m2): # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2): # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2   # Region 2 completely submerged upto zone 3
             elif (m2 < total_height <= t2):  # Zone 4b. Coincides with zone 4 of region 2
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 # Base of D4 = m2
                 area_r_2 = 0.5 * (m2 - r_2_h0) * (m2 - r_2_h0) * (1 / s) + 0.5 * (total_height - m2) * (m2 - r_2_h0) * (1 / s)  # D4 will resist
             else: # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -552,14 +555,14 @@ class Environment(Env):
 
             # D1 will resist zone 2a, else ineffective
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -573,14 +576,14 @@ class Environment(Env):
             # D1 will resist zone 2a, else ineffective
             # Same as System 13 (0.75, 0, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -593,14 +596,14 @@ class Environment(Env):
             # D3 ineffective
             # D1 will resist zone 2a, else ineffective
             # Same as system 13 (0.75, 0, 0.75, 0)
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -615,14 +618,14 @@ class Environment(Env):
             # D1 will resist zone 2a, else ineffective
             # Same as system 13: (0.75, 0, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -635,17 +638,17 @@ class Environment(Env):
             # D1 will resist zone 2a
             # D2 will resits zone 4a
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             else:  # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -660,17 +663,17 @@ class Environment(Env):
             # D4 ineffective since D2=0.75
             # Same as system 17 (0.75, 0.75, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             else:  # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -685,17 +688,17 @@ class Environment(Env):
             # D3 ineffective since D1=0.75
             # Same as system 17 (0.75, 0.75, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             else:  # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -711,17 +714,17 @@ class Environment(Env):
             # D3 & D4 ineffective
             # Same as system 17 (0.75, 0.75, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             else:  # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -736,17 +739,17 @@ class Environment(Env):
             # D2 will resist zone 4a
             # Same as system 17 (0.75, 0.75, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             else:  # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -761,21 +764,21 @@ class Environment(Env):
             # D2 will resist zone 4a as well as zone 4b
             # D4 will resist zone 4
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
-            elif (b2 < total_height <= m2): # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s) # D2 will resist
+            elif (self.b2 < total_height <= m2): # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s) # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2   # Region 2 completely submerged upto zone 3
             elif (m2 < total_height <= t2):  # Zone 4b. Coincides with zone 4 of region 2
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 # Base of D4 = m2
                 area_r_2 = 0.5 * (m2 - r_2_h0) * (m2 - r_2_h0) * (1 / s) + 0.5 * (total_height - m2) * (m2 - r_2_h0) * (1 / s)  # D4 will resist
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -790,17 +793,17 @@ class Environment(Env):
             # D3 ineffective
             # Same as system 17 (0.75, 0.75, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             else:  # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -816,21 +819,21 @@ class Environment(Env):
             # D4 will resist zone 4
             # Same as System 22 (0.75, 1.5, 0, 0.75)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
-            elif (b2 < total_height <= m2): # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s) # D2 will resist
+            elif (self.b2 < total_height <= m2): # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s) # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2   # Region 2 completely submerged upto zone 3
             elif (m2 < total_height <= t2):  # Zone 4b. Coincides with zone 4 of region 2
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 # Base of D4 = m2
                 area_r_2 = 0.5 * (m2 - r_2_h0) * (m2 - r_2_h0) * (1 / s) + 0.5 * (total_height - m2) * (m2 - r_2_h0) * (1 / s)  # D4 will resist
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -844,14 +847,14 @@ class Environment(Env):
             # D1 will resist zone 2a
             # Same as System 13 (0.75, 0, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -865,14 +868,14 @@ class Environment(Env):
             # D4 ineffective
             # Same as System 13 (0.75, 0, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -885,18 +888,18 @@ class Environment(Env):
             # D1 will resist zone 2a as well as zone 2b
             # D3 will resist zone 2
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             elif (m1 < total_height <= t1): # Zone 2b. Coincides with zone 2 of region 2
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)  # D1 will resist
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)  # D1 will resist
                 # Base of D3 = m1
                 area_r_2 = 0.5 * (m1 - r_2_h0) * (m1 - r_2_h0) * (1 / s) + 0.5 * (total_height - m1) * (m1 - r_2_h0) * (1 / s) # D3 will resist
             else: # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -911,18 +914,18 @@ class Environment(Env):
             # D4 will be ineffective
             # Same as System 27 (1.5, 0, 0.75, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             elif (m1 < total_height <= t1): # Zone 2b. Coincides with zone 2 of region 2
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)  # D1 will resist
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)  # D1 will resist
                 # Base of D3 = m1
                 area_r_2 = 0.5 * (m1 - r_2_h0) * (m1 - r_2_h0) * (1 / s) + 0.5 * (total_height - m1) * (m1 - r_2_h0) * (1 / s) # D3 will resist
             else: # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -936,17 +939,17 @@ class Environment(Env):
             # D2 will resist zone 4a
             # Same as System 17 (0.75, 0.75, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             else:  # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -961,17 +964,17 @@ class Environment(Env):
             # D4 ineffective
             # Same as System 17 (0.75, 0.75, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             else:  # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -984,21 +987,21 @@ class Environment(Env):
             # D1 will resist zone 2a and 2b. D3 resist zone 2
             # D2 will resist zone 4a
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             elif (m1 < total_height <= t1):  # Zone 2b. Coincides with zone 2 of region 2
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)  # D1 will resist
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)  # D1 will resist
                 # Base of D3 = m1
                 area_r_2 = 0.5 * (m1 - r_2_h0) * (m1 - r_2_h0) * (1 / s) + 0.5 * (total_height - m1) * (m1 - r_2_h0) * (1 / s)  # D3 will resist
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -1012,21 +1015,21 @@ class Environment(Env):
             # D2 will resist zone 4a. D4 ineffective
             # Same as system 31 (1.5, 0.75, 0.75, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
             elif (m1 < total_height <= t1):  # Zone 2b. Coincides with zone 2 of region 2
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)  # D1 will resist
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)  # D1 will resist
                 # Base of D3 = m1
                 area_r_2 = 0.5 * (m1 - r_2_h0) * (m1 - r_2_h0) * (1 / s) + 0.5 * (total_height - m1) * (m1 - r_2_h0) * (1 / s)  # D3 will resist
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -1040,17 +1043,17 @@ class Environment(Env):
             # D2 will resist zone 4a
             # same as system 17 (0.75, 0.75, 0, 0)
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)   # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)   # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             else:  # everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -1063,21 +1066,21 @@ class Environment(Env):
             # D1 will resist zone 2a
             # D2 will resist zone 4a and 4b. D4 will resist zone 4
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)  # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)  # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             elif (m2 < total_height <= t2):  # Zone 4b. Coincides with zone 4 of region 2
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 # Base of D4 = m2
                 area_r_2 = 0.5 * (m2 - r_2_h0) * (m2 - r_2_h0) * (1 / s) + 0.5 * (total_height - m2) * (m2 - r_2_h0) * (1 / s)  # D4 will resist
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -1091,21 +1094,21 @@ class Environment(Env):
             # D2 will resist zone 4a
             # Same as system 34
 
-            if total_height <= b1:
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)  # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)  # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             elif (m2 < total_height <= t2):  # Zone 4b. Coincides with zone 4 of region 2
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 # Base of D4 = m2
                 area_r_2 = 0.5 * (m2 - r_2_h0) * (m2 - r_2_h0) * (1 / s) + 0.5 * (total_height - m2) * (m2 - r_2_h0) * (1 / s)  # D4 will resist
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
             vol_f = area_r_1 + area_r_2
@@ -1118,25 +1121,25 @@ class Environment(Env):
             # D1 will resist zone 2a and 2b. D3 will resist zone 2
             # D2 will resist zone 4a and 4b. D4 will resist zone 4
 
-            if total_height <= b1:  # Zone 1
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2 if total_height > r_1_h0 else 0
+            if total_height <= self.b1:  # Zone 1
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2 if total_height > self.r_1_h0 else 0
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2 if total_height > r_2_h0 else 0
-            elif (b1 < total_height <= m1):  # Zone 2a
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)  # D1 will resist
+            elif (self.b1 < total_height <= m1):  # Zone 2a
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)  # D1 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged
             elif (m1 < total_height <= t1):  # Zone 2b. Coincides with zone 2 of region 2
-                area_r_1 = 0.5 * (b1 - r_1_h0) * (b1 - r_1_h0) * (1 / s) + 0.5 * (total_height - b1) * (b1 - r_1_h0) * (1 / s)  # D1 will resist
+                area_r_1 = 0.5 * (self.b1 - self.r_1_h0) * (self.b1 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b1) * (self.b1 - self.r_1_h0) * (1 / s)  # D1 will resist
                 # Base of D3 = m1
                 area_r_2 = 0.5 * (m1 - r_2_h0) * (m1 - r_2_h0) * (1 / s) + 0.5 * (total_height - m1) * (m1 - r_2_h0) * (1 / s)  # D3 will resist
-            elif (b2 < total_height <= m2):  # zone 4a
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)  # D2 will resist
+            elif (self.b2 < total_height <= m2):  # zone 4a
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)  # D2 will resist
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2  # Region 2 completely submerged upto zone 3
             elif (m2 < total_height <= t2):  # Zone 4b. Coincides with zone 4 of region 2
-                area_r_1 = 0.5 * (b2 - r_1_h0) * (b2 - r_1_h0) * (1 / s) + 0.5 * (total_height - b2) * (b2 - r_1_h0) * (1 / s)
+                area_r_1 = 0.5 * (self.b2 - self.r_1_h0) * (self.b2 - self.r_1_h0) * (1 / s) + 0.5 * (total_height - self.b2) * (self.b2 - self.r_1_h0) * (1 / s)
                 # Base of D4 = m2
                 area_r_2 = 0.5 * (m2 - r_2_h0) * (m2 - r_2_h0) * (1 / s) + 0.5 * (total_height - m2) * (m2 - r_2_h0) * (1 / s)  # D4 will resist
             else:  # Dike D1 becomes ineffective, everything submerged
-                area_r_1 = 0.5 * (1 / s) * (total_height - r_1_h0)**2
+                area_r_1 = 0.5 * (1 / s) * (total_height - self.r_1_h0)**2
                 area_r_2 = 0.5 * (1 / s) * (total_height - r_2_h0) ** 2
 
 

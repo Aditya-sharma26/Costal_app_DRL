@@ -17,11 +17,11 @@ from environment_2_regions_4_dikes import Environment
 #     env = Environment(env_name=env_name, climate_model=climate_model)
 #
 #     return env
-def make_env(env_name, climate_model):
+def make_env(env_name, climate_model, b1, b2, r_1_h0):
     # Use the env_name argument to dynamically load the module
     env_module = importlib.import_module(env_name)
     Environment = getattr(env_module, 'Environment')
-    env = Environment(env_name=env_name, climate_model=climate_model)
+    env = Environment(env_name=env_name, climate_model=climate_model, b1=b1, b2=b2, r_1_h0=r_1_h0)
     return env
 
 
