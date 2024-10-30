@@ -16,7 +16,7 @@ if __name__ == '__main__':
     # Define environment-specific parameters
     parser.add_argument('-b1', type=float, default=1.0, help='Base height for Region 1 lower dike')
     # Dike in region 2 are placed adjacent to dike in region 1 with their top height matching to prevent lateral flow
-    parser.add_argument('-b2', type=float, default=3.25, help='Base height for Region 1 higher dike')
+    parser.add_argument('-b2', type=float, default=3.0, help='Base height for Region 1 higher dike')
     # Base elevation of region 2 is hard coded to be 0.75 m higher than region 1
     parser.add_argument('-r_1_h0', type=float, default=0.0, help='Base elevation for Region 1')
 
@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
         # evaluation iteration - evaluate 100 episodes and return average returns
         # run every 5 training episodes
-        if i % 100:
+        if i % 100 == 0:
             eval_scores = []
             for eval_epi in range(n_eval_episodes):
                 observation = env.reset()
@@ -191,11 +191,11 @@ if __name__ == '__main__':
                     # print(f'year: {env.year}')
                     new_observation, reward, done, info = env.step(action)
                     eval_rewards += reward
-                    if i%1000==0:
-                        if year <= 20:  # Log only up to year 10
-                            log_file.write(
-                                f'Episode: {i} year: {year}, action: {action}, Next state: {env.next_system}\n')
-                            log_file.flush()
+                    if eval_epi%(n_eval_episodes-1)==0:
+                        log_file.write(
+                            f'Episode: {i} year: {year}, action: {action}, Next state: {env.system}\n')
+                        log_file.flush()
+
                     observation = new_observation
                     if done:
                         print('epi {} ends with total rewards {}'.format(eval_epi, eval_rewards))
