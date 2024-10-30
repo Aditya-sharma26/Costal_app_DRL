@@ -5,6 +5,7 @@ import numpy as np
 import mat73
 from values_slr import slr
 from values_surge import surge
+import torch as T
 
 class Environment(Env):
     def __init__(self, env_name, climate_model, b1, b2, r_1_h0):
@@ -50,6 +51,14 @@ class Environment(Env):
         self.trans_slr = self.trans[0]
         self.trans_surge = self.trans[1]
 
+        # Mapping from system configuration to index
+        self.system_to_index = {state: idx for idx, state in enumerate(self.state_space)}
+        self.index_to_system = {idx: state for idx, state in enumerate(self.state_space)}
+        self.num_systems = len(self.state_space)
+        self.num_actions = len(self.action_space)
+
+        # Precompute action masks
+        self.action_masks = self.precompute_action_masks()
         #self.terminal_rewards = self.get_terminal_reward(env_model=self.model)
 
     def define_action_space(self):
@@ -171,6 +180,16 @@ class Environment(Env):
                 max(state[3], action[3])  # D4 height after action
             )
             self.transition_mapping[(state, action_idx)] = next_state
+
+    def precompute_action_masks(self):
+        """
+        Precompute action masks for all possible system configurations.
+        """
+        action_masks = np.zeros((self.num_systems, self.num_actions), dtype=np.float32)
+        for idx, state in enumerate(self.state_space):
+            valid_actions = self.dynamic_action_space[state]
+            action_masks[idx, valid_actions] = 1.0
+        return T.tensor(action_masks)
 
     def step(self, action):
 

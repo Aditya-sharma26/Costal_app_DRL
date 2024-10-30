@@ -174,57 +174,163 @@ class DDQNAgent(Agent):
                                    name=self.env_name + '_' + self.algo + '_q_next',
                                    chkpt_dir=self.chkpt_dir)
 
+    # def choose_action_eval(self, env, observation):
+    #     state = T.tensor([observation], dtype=T.float).to(self.q_eval.device)
+    #     actions = self.q_eval.forward(state)
+    #     # action masking
+    #     # print(f'q values: {actions}')
+    #
+    #     # action masking
+    #     valid_actions = env.get_valid_actions(env.system)
+    #     action_mask = np.zeros(len(env.action_space), dtype=int)
+    #     action_mask[valid_actions] = 1
+    #     action_mask_tensor = T.tensor(action_mask, device=actions.device).unsqueeze(0)
+    #
+    #     masked_q_values = actions*action_mask_tensor
+    #     masked_q_values[action_mask_tensor == 0] = float('-inf')
+    #
+    #     max_q_index = T.argmax(masked_q_values, dim=1)[0]
+    #     action = np.int64(max_q_index.detach().item())
+    #     print(f'evaluation: year:{env.year}: action taken by agent: {action}')
+    #
+    #     return action
+
     def choose_action_eval(self, env, observation):
         state = T.tensor([observation], dtype=T.float).to(self.q_eval.device)
         actions = self.q_eval.forward(state)
-        # action masking
-        # print(f'q values: {actions}')
 
-        # action masking
-        valid_actions = env.get_valid_actions(env.system)
-        action_mask = np.zeros(len(env.action_space), dtype=int)
-        action_mask[valid_actions] = 1
-        action_mask_tensor = T.tensor(action_mask, device=actions.device).unsqueeze(0)
+        # Get system configuration and map it to index
+        system = tuple(env.system)
+        system_idx = env.system_to_index[system]
 
-        masked_q_values = actions*action_mask_tensor
-        masked_q_values[action_mask_tensor == 0] = float('-inf')
+        # Retrieve the precomputed action mask and adjust its shape
+        action_mask = env.action_masks[system_idx].to(self.q_eval.device).unsqueeze(0)
+
+        # Apply action mask using masked_fill
+        masked_q_values = actions.masked_fill(action_mask == 0, float('-inf'))
+
+        # Alternatively, if you prefer using indexing:
+        # masked_q_values[action_mask == 0] = float('-inf')  # This will now work
 
         max_q_index = T.argmax(masked_q_values, dim=1)[0]
         action = np.int64(max_q_index.detach().item())
-        print(f'evaluation: year:{env.year}: action taken by agent: {action}')
+        print(f'Evaluation: year:{env.year}, action taken by agent: {action}')
 
         return action
 
     def choose_action(self, env, observation):
-
         if np.random.random() > self.epsilon:
             state = T.tensor([observation], dtype=T.float).to(self.q_eval.device)
             actions = self.q_eval.forward(state)
-            # action masking
-            # print(f'q values: {actions}')
-            system = np.argmax(env.system)
-            # action masking
-            valid_actions = env.get_valid_actions(env.system)
-            action_mask = np.zeros(len(env.action_space), dtype=int)
-            action_mask[valid_actions] = 1
-            action_mask_tensor = T.tensor(action_mask, device=actions.device).unsqueeze(0)
 
-            masked_q_values = actions * action_mask_tensor
-            masked_q_values[action_mask_tensor == 0] = float('-inf')
+            # Get system configuration and map it to index
+            system = tuple(env.system)
+            system_idx = env.system_to_index[system]
+
+            # Retrieve the precomputed action mask and adjust its shape
+            action_mask = env.action_masks[system_idx].to(self.q_eval.device).unsqueeze(0)
+
+            # Apply action mask using masked_fill
+            masked_q_values = actions.masked_fill(action_mask == 0, float('-inf'))
 
             max_q_index = T.argmax(masked_q_values, dim=1)[0]
             action = np.int64(max_q_index.detach().item())
-            print(f'year:{env.year}: action taken by agent: {action}')
-
+            print(f'Year:{env.year}, action taken by agent: {action}')
         else:
-            # random exploration on valid action space
-            valid_actions = env.get_valid_actions(env.system)
+            # Random exploration on valid action space
+            valid_actions = env.dynamic_action_space[env.system]
             action = np.random.choice(valid_actions)
             action = np.int64(action)
-
-            print(f'year: {env.year}: random action taken: {action}')
+            print(f'Year: {env.year}, random action taken: {action}')
 
         return action
+    # def choose_action(self, env, observation):
+    #
+    #     if np.random.random() > self.epsilon:
+    #         state = T.tensor([observation], dtype=T.float).to(self.q_eval.device)
+    #         actions = self.q_eval.forward(state)
+    #         # action masking
+    #         # print(f'q values: {actions}')
+    #         system = np.argmax(env.system)
+    #         # action masking
+    #         valid_actions = env.get_valid_actions(env.system)
+    #         action_mask = np.zeros(len(env.action_space), dtype=int)
+    #         action_mask[valid_actions] = 1
+    #         action_mask_tensor = T.tensor(action_mask, device=actions.device).unsqueeze(0)
+    #
+    #         masked_q_values = actions * action_mask_tensor
+    #         masked_q_values[action_mask_tensor == 0] = float('-inf')
+    #
+    #         max_q_index = T.argmax(masked_q_values, dim=1)[0]
+    #         action = np.int64(max_q_index.detach().item())
+    #         print(f'year:{env.year}: action taken by agent: {action}')
+    #
+    #     else:
+    #         # random exploration on valid action space
+    #         valid_actions = env.get_valid_actions(env.system)
+    #         action = np.random.choice(valid_actions)
+    #         action = np.int64(action)
+    #
+    #         print(f'year: {env.year}: random action taken: {action}')
+    #
+    #     return action
+
+    # def learn(self, env):
+    #     if self.memory.size < self.batch_size or self.memory.size < 4000:
+    #         return
+    #
+    #     self.q_eval.optimizer.zero_grad()
+    #
+    #     self.replace_target_network()
+    #
+    #     states, actions, rewards, states_, dones, indexes, weights = self.sample_memory()
+    #     indices = np.arange(self.batch_size)
+    #
+    #     q_pred = self.q_eval.forward(states)[indices, actions]
+    #     q_next = self.q_next.forward(states_)
+    #     q_eval = self.q_eval.forward(states_)
+    #
+    #     # Original implementation
+    #     # for i in range(actions.size(dim=0)):
+    #     #     system = states[i][-4:]
+    #     #     valid_actions = env.get_valid_actions(system)
+    #     #     action_mask = np.zeros(len(env.action_space), dtype=int)
+    #     #     action_mask[valid_actions] = 1
+    #     #     action_mask_tensor = T.tensor(action_mask, device=actions.device).unsqueeze(0)
+    #     #
+    #     #     masked_q_values = q_eval[i] * action_mask_tensor
+    #     #     masked_q_values[action_mask_tensor == 0] = float('-inf')
+    #     #     q_eval[i] = masked_q_values
+    #
+    #     # Vectorized action masking
+    #     systems = states_[:, -4:]  # Assuming the last 4 elements represent the system state
+    #     action_mask_tensor = T.zeros(q_eval.size(), device=actions.device)
+    #
+    #     for i in range(self.batch_size):
+    #         system = systems[i]
+    #         valid_actions = env.get_valid_actions(system)
+    #         action_mask_tensor[i, valid_actions] = 1
+    #
+    #     masked_q_values = q_eval * action_mask_tensor
+    #     masked_q_values[action_mask_tensor == 0] = float('-inf')
+    #
+    #     max_actions = T.argmax(masked_q_values, dim=1)
+    #     q_next[dones] = 0.0
+    #
+    #     q_target = rewards + self.gamma * q_next[indices, max_actions]
+    #     td_errors = q_pred - q_target
+    #     loss = self.q_eval.loss(q_target, q_pred).to(self.q_eval.device)
+    #     loss.backward()
+    #
+    #     self.q_eval.optimizer.step()
+    #     self.learn_step_counter += 1
+    #
+    #     new_priorities = np.abs(td_errors.detach().cpu().numpy()) + 1e-6
+    #     self.memory.update_priorities(indexes, new_priorities)
+    #     self.decrement_epsilon()
+    #
+    #     loss_value = loss.detach().cpu().item()
+    #     print('Loss: {:.4f}'.format(loss_value))
 
     def learn(self, env):
         if self.memory.size < self.batch_size or self.memory.size < 4000:
@@ -241,31 +347,21 @@ class DDQNAgent(Agent):
         q_next = self.q_next.forward(states_)
         q_eval = self.q_eval.forward(states_)
 
-        # Original implementation
-        # for i in range(actions.size(dim=0)):
-        #     system = states[i][-4:]
-        #     valid_actions = env.get_valid_actions(system)
-        #     action_mask = np.zeros(len(env.action_space), dtype=int)
-        #     action_mask[valid_actions] = 1
-        #     action_mask_tensor = T.tensor(action_mask, device=actions.device).unsqueeze(0)
-        #
-        #     masked_q_values = q_eval[i] * action_mask_tensor
-        #     masked_q_values[action_mask_tensor == 0] = float('-inf')
-        #     q_eval[i] = masked_q_values
+        # Extract system configurations from the states
+        systems = states[:, -4:]  # Assuming the last 4 elements are the system state
 
-        # Vectorized action masking
-        systems = states_[:, -4:]  # Assuming the last 4 elements represent the system state
-        action_mask_tensor = T.zeros(q_eval.size(), device=actions.device)
+        # Map systems to indices
+        systems_np = systems.cpu().numpy()
+        system_indices = np.array([env.system_to_index[tuple(system)] for system in systems_np])
 
-        for i in range(self.batch_size):
-            system = systems[i]
-            valid_actions = env.get_valid_actions(system)
-            action_mask_tensor[i, valid_actions] = 1
+        # Retrieve action masks for the batch
+        action_masks = env.action_masks[system_indices].to(self.q_eval.device)
 
-        masked_q_values = q_eval * action_mask_tensor
-        masked_q_values[action_mask_tensor == 0] = float('-inf')
+        # Apply action masks using masked_fill
+        q_eval = q_eval.masked_fill(action_masks == 0, float('-inf'))
+        q_next = q_next.masked_fill(action_masks == 0, float('-inf'))
 
-        max_actions = T.argmax(masked_q_values, dim=1)
+        max_actions = T.argmax(q_eval, dim=1)
         q_next[dones] = 0.0
 
         q_target = rewards + self.gamma * q_next[indices, max_actions]
