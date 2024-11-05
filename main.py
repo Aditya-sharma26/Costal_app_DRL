@@ -179,7 +179,7 @@ if __name__ == '__main__':
                 year = 0
                 while not done:
                     steps += 1
-                    year += 1
+
                     # [slr_state, surge_state] = components(observation)
                     slr_value = slr(observation[0])
                     surge_value = surge(observation[1])
@@ -197,6 +197,7 @@ if __name__ == '__main__':
                         log_file.flush()
 
                     observation = new_observation
+                    year += 1
                     if done:
                         print('epi {} ends with total rewards {}'.format(eval_epi, eval_rewards))
                         break
@@ -235,7 +236,7 @@ if __name__ == '__main__':
         year = 0
         while not done:
             steps += 1
-            year += 1
+
             # [slr_state, surge_state] = components(observation)
             slr_value = slr(observation[0])
             surge_value = surge(observation[1])
@@ -247,7 +248,7 @@ if __name__ == '__main__':
             new_observation, reward, done, info = env.step(action)
             rewards += reward
             observation = new_observation
-
+            year += 1
             if done:
                 print('epi {} ends with total rewards {}'.format(episode, rewards))
                 break
