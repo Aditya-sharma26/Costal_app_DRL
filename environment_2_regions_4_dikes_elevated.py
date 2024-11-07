@@ -25,21 +25,20 @@ class Environment(Env):
         # Define the state space for SLR and storm surge
         self.n_states_slr = 77
         self.n_states_surge = 72
-        # self.n_states_total = self.n_states_slr + self.n_states_surge
-        self.n_states_total = 1 # only slr discrete state input
+        self.n_states_total = self.n_states_slr + self.n_states_surge
 
         # Define the action space and state space for the environment
         self.action_space = self.define_action_space()
         self.state_space = self.define_state_space()
-        # self.observation_space = Discrete(self.n_states_total) # slr + surge
-        self.observation_space = Discrete(self.n_states_total) # slr
+        self.observation_space = Discrete(self.n_states_total) # slr + surge
+
         # Initialize dynamic action space and transition mapping
         self.dynamic_action_space = {}
         self.transition_mapping = {}
         self.generate_dynamic_actions_and_transitions()
 
         # Define the initial state of the environment (SLR, storm_surge)
-        self.initial_state = [np.array([4]), np.array([10])]  # Example initial state
+        self.initial_state = np.array([4, 1])  # Example initial state
         self.state = self.initial_state
 
         # Define the initial system configuration (D1, D2, D3, D4)
@@ -204,11 +203,9 @@ class Environment(Env):
         # print(f"Next SLR state: {next_slr}")
 
         # Transition in storm surge based on the current state
-        # trans_surge_state = self.trans_surge[0][
-        #     int(self.state[1])]  # 1x72 probability vector based on the current storm surge state (state[1])
-        # next_surge = np.random.choice(np.array(range(0, self.n_states_surge)), 1, p=trans_surge_state)
-
-        next_surge = self.state[1]# fixed at 1 m
+        trans_surge_state = self.trans_surge[0][
+            int(self.state[1])]  # 1x72 probability vector based on the current storm surge state (state[1])
+        next_surge = np.random.choice(np.array(range(0, self.n_states_surge)), 1, p=trans_surge_state)
         print(f"Year: {self.year}, Next SLR state: {next_slr}, Next Surge state: {next_surge}")
 
         # Combine SLR and storm surge to determine the next water height state
@@ -263,14 +260,8 @@ class Environment(Env):
         surge = np.zeros(self.n_states_surge)
         surge[int(observation[1])] = 1
         # print(s[int(state)])
-        # one-hot slr + one-hot surge
-        # state_combined = np.concatenate(((np.array([time / horizon])), slr, surge), axis=None)
-
-        # one-hot slr
+        state_combined = np.concatenate(((np.array([time / horizon])), slr, surge), axis=None)
         # state_combined = np.concatenate(((np.array([time / horizon])), slr), axis=None)
-
-        # slr state
-        state_combined = np.concatenate(((np.array([time / horizon])), int(observation[0])/self.n_states_slr), axis=None)
         # print(state_combined.shape)
         state_combined = np.concatenate((state_combined, np.array(self.system).T), axis=None)
         # print(state_combined.shape)
