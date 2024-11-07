@@ -27,7 +27,7 @@ if __name__ == '__main__':
                         help='Learning rate for optimizer')
     parser.add_argument('-eps_min', type=float, default=0.02,
                         help='Minimum value for epsilon in epsilon-greedy action selection')
-    parser.add_argument('-gamma', type=float, default=0.90,
+    parser.add_argument('-gamma', type=float, default=0.97,
                         help='Discount factor for update equation.')
     parser.add_argument('-eps_dec', type=float, default=1e-5,
                         help='Linear factor for decreasing epsilon')
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     parser.add_argument('-gpu', type=str, default='0', help='GPU: 0 or 1')
     parser.add_argument('-load_checkpoint', type=bool, default=False,
                         help='load model checkpoint')
-    parser.add_argument('-path', type=str, default='models/',
+    parser.add_argument('-path', type=str, default='results/',
                         help='path for model saving/loading')
     parser.add_argument('-algo', type=str, default='DDQNAgent',
                         help='DQNAgent/DDQNAgent/DuelingDQNAgent/DuelingDDQNAgent')

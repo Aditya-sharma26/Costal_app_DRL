@@ -4,12 +4,14 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import gym
+from environment_2_regions_4_dikes_elevated import Environment
+
 # from environments import Environment
 # from env_modified import Environment
 # from env_modified_slr_not_discrete import Environment
 # from env_modified_surge import Environment
 # from env_continuous import Environment
-from environment_2_regions_4_dikes import Environment
+
 # from env_without_terminal import Environment
 
 
@@ -17,6 +19,7 @@ from environment_2_regions_4_dikes import Environment
 #     env = Environment(env_name=env_name, climate_model=climate_model)
 #
 #     return env
+
 def make_env(env_name, climate_model, b1, b2, r_1_h0):
     # Use the env_name argument to dynamically load the module
     env_module = importlib.import_module(env_name)
