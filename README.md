@@ -46,17 +46,3 @@ The POMDP input file is generated using **inp_pomdp_file_generator.m** file. The
 - Kopp, R. E., Garner, G. G., Hermans, T. H. J., Jha, S., Kumar, P., Reedy, A., Slangen, A. B. A., Turilli, M., Edwards, T. L., Gregory, J. M., Koubbe, G., Levermann, A., Merzky, A., Nowicki, S., Palmer, M. D., & Smith, C. (2023). The Framework for Assessing Changes To Sea-Level (FACTS) v1.0: A platform for characterizing parametric and structural uncertainty in future global, relative, and extreme sea-level change. Geoscientific Model Development, 16, 7461–7489. https://doi.org/10.5194/gmd-16-7461-2023
 - Garner, G. G., T. Hermans, R. E. Kopp, A. B. A. Slangen, T. L. Edwards, A. Levermann, S. Nowikci, M. D. Palmer, C. Smith, B. Fox-Kemper, H. T. Hewitt, C. Xiao, G. Aðalgeirsdóttir, S. S. Drijfhout, T. L. Edwards, N. R. Golledge, M. Hemer, G. Krinner, A. Mix, D. Notz, S. Nowicki, I. S. Nurhati, L. Ruiz, J-B. Sallée, Y. Yu, L. Hua, T. Palmer, B. Pearson, 2021. IPCC AR6 Sea Level Projections. Version 20210809. Dataset accessed [2024-10-27] at https://doi.org/10.5281/zenodo.5914709.
   
-## Citation
-
-If you use this repository in your research or projects, please cite our paper as follows:
-
-```bibtex
-@article{bhattacharya2025optimal,
-    author = {Bhattacharya, A. and Papakonstantinou, K.G., and Warn, G.P., McPhillips, L.,
-    Bilec, M.M., and Forest, C.E., and Hasan, R. and Chavda, D.},
-    title = {Optimal Life-Cycle Adaptation of Coastal Infrastructure under Climate Change},
-    journal = {Nature Communications},
-    volume={16},
-    pages={1076},
-    year = {2025},
-}
